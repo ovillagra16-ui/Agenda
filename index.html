@@ -565,7 +565,7 @@ let notes    = JSON.parse(localStorage.getItem('notes')    || '[]');
 let tareas   = JSON.parse(localStorage.getItem('tareas')   || '[]');
 let actas    = JSON.parse(localStorage.getItem('actas')    || '[]');
 let chatHistory = [];
-let tareasViewDate = new Date().toISOString().split('T')[0];
+let tareasViewDate = fechaHoy();
 let currentActaId = null;
 let actaPuntosTraList = [];
 let actaAcuerdosList  = [];
@@ -628,7 +628,7 @@ function openNewMeeting() {
   openModal('Nueva Reunión', `
     <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" placeholder="Ej: Reunión de equipo"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" type="date" id="mDate" value="${new Date().toISOString().split('T')[0]}"></div>
+      <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" type="date" id="mDate" value="${fechaHoy()}"></div>
       <div class="form-group"><label class="form-label">Hora</label><input class="form-input" type="time" id="mTime"></div>
     </div>
     <div class="form-group"><label class="form-label">Participantes</label><input class="form-input" id="mParticipants" placeholder="Nombres separados por coma"></div>
@@ -661,7 +661,7 @@ function scheduleMeetingReminder(m) {
 meetings.forEach(m => scheduleMeetingReminder(m));
 
 function renderMeetings() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaHoy();
   const upcoming = meetings.filter(m=>m.date>=today);
   const past     = meetings.filter(m=>m.date<today);
   let html='';
@@ -796,13 +796,13 @@ function scheduleAlertaTarea(t) {
 }
 tareas.forEach(t=>{ if(!t.done&&t.hora) scheduleAlertaTarea(t); });
 
-function irAHoy() { tareasViewDate=new Date().toISOString().split('T')[0]; renderTareas(); }
+function irAHoy() { tareasViewDate=fechaHoy(); renderTareas(); }
 function cambiarDia(d) {
   const dt=new Date(tareasViewDate+'T12:00:00'); dt.setDate(dt.getDate()+d);
-  tareasViewDate=dt.toISOString().split('T')[0]; renderTareas();
+  tareasViewDate=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; renderTareas();
 }
 function renderTareas() {
-  const hoyStr=new Date().toISOString().split('T')[0];
+  const hoyStr=fechaHoy();
   const isHoy=tareasViewDate===hoyStr;
   const nowTime=new Date().toTimeString().slice(0,5);
   const [y,m,d]=tareasViewDate.split('-');
@@ -890,7 +890,7 @@ function renderActas() {
 function openNewActa() {
   currentActaId=null; actaPuntosTraList=[]; actaAcuerdosList=[];
   document.getElementById('actaMeetingRef').innerHTML='<option value="">— Sin vincular —</option>'+meetings.map(m=>`<option value="${m.id}">${m.title} (${formatDate(m.date)})</option>`).join('');
-  document.getElementById('actaDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('actaDate').value=fechaHoy();
   ['actaHoraInicio','actaHoraFin','actaLugar','actaParticipantes','actaObservaciones'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('actaSecretario').value='Osvaldo';
   document.getElementById('actaEditorTitle').textContent='Nueva Acta';
@@ -985,7 +985,7 @@ function printActa() { switchActaTab('preview',document.getElementById('tabPrevi
 async function sendChat() {
   const input=document.getElementById('chatInput'); const text=input.value.trim(); if(!text) return; input.value='';
   addMessage('user',text);
-  const today=new Date().toISOString().split('T')[0];
+  const today=fechaHoy();
   const ctx=`Eres un asistente de agenda. El usuario se llama Osvaldo. Hoy: ${new Date().toLocaleDateString('es-CL')}.
 REUNIONES: ${meetings.filter(m=>m.date>=today).map(m=>`"${m.title}" ${m.date} ${m.time}`).join(', ')||'Ninguna'}
 TAREAS HOY: ${tareas.filter(t=>t.fecha===today).map(t=>`"${t.titulo}" ${t.done?'✓':'pendiente'}`).join(', ')||'Ninguna'}
@@ -1012,8 +1012,8 @@ function scrollChat(){ const el=document.getElementById('chatMessages'); el.scro
 
 // ===== DASHBOARD =====
 function renderDashboard() {
-  const today=new Date().toISOString().split('T')[0];
-  const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=we.toISOString().split('T')[0];
+  const today=fechaHoy();
+  const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=`${we.getFullYear()}-${String(we.getMonth()+1).padStart(2,'0')}-${String(we.getDate()).padStart(2,'0')}`;
   document.getElementById('statToday').textContent=meetings.filter(m=>m.date===today).length;
   document.getElementById('statTareas').textContent=tareas.filter(t=>t.fecha===today&&!t.done).length;
   document.getElementById('statNotes').textContent=notes.length;
@@ -1037,19 +1037,19 @@ function renderCalendar() {
   for(let i=0;i<42;i++){
     if(i<firstDay){ html+=`<div class="cal-day other-month"></div>`; }
     else if(dc>daysInMonth){ html+=`<div class="cal-day other-month"></div>`; }
-    else{ const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(dc).padStart(2,'0')}`; html+=`<div class="cal-day ${dc===now.getDate()?'today':''} ${meetingDates.has(ds)?'has-event':''}">${dc}</div>`; dc++; }
+    else{ const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(dc).padStart(2,'0')}`; const isToday=ds===fechaHoy(); html+=`<div class="cal-day ${isToday?'today':''} ${meetingDates.has(ds)?'has-event':''}">${dc}</div>`; dc++; }
   }
   html+='</div>'; document.getElementById('calendarWidget').innerHTML=html;
 }
 function renderSidebarUpcoming() {
-  const today=new Date().toISOString().split('T')[0];
+  const today=fechaHoy();
   const up=meetings.filter(m=>m.date>=today).slice(0,3);
   document.getElementById('sidebarUpcoming').innerHTML=up.length?up.map(m=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="showView('meetings',document.getElementById('nav-meetings'))"><div style="font-size:12px;font-weight:500;color:var(--text);">${m.title}</div><div style="font-size:11px;color:var(--accent);">${formatDate(m.date)} ${m.time}</div></div>`).join(''):'<span style="opacity:0.5">Sin reuniones</span>';
 }
 
 // ===== BADGES =====
 function updateBadges() {
-  const today=new Date().toISOString().split('T')[0];
+  const today=fechaHoy();
   document.getElementById('meetingsBadge').textContent=meetings.length;
   const tp=tareas.filter(t=>t.fecha===today&&!t.done).length;
   const tb=document.getElementById('tareasBadge'); tb.textContent=tp; tb.style.background=tp>0?'var(--accent2)':'var(--accent)';
@@ -1096,7 +1096,11 @@ function startVizAnimation(){
   vizInterval=setInterval(()=>{ if(!micActive)return; viz.querySelectorAll('.mic-bar').forEach(b=>{b.style.height=(Math.random()*26+4)+'px';b.style.opacity=0.4+Math.random()*0.6;}); },120);
 }
 
-// ===== SIDEBAR TOGGLE =====
+// Helper: fecha local como YYYY-MM-DD (evita desfase UTC)
+function fechaHoy() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function toggleSidebar() {
   const app = document.querySelector('.app');
   app.classList.toggle('sidebar-collapsed');
@@ -1136,7 +1140,7 @@ function closeMobileMore() {
   document.getElementById('mobileMoreOverlay').style.display = 'none';
 }
 function updateMobileDots() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaHoy();
   const tp = tareas.filter(t => t.fecha === today && !t.done).length;
   const mp = meetings.filter(m => m.date >= today).length;
   const td = document.getElementById('mdot-tareas');
