@@ -1035,7 +1035,8 @@ function renderCalendar() {
   let html=`<div style="text-align:center;font-family:'Syne',sans-serif;font-weight:700;margin-bottom:12px;font-size:14px;">${meses[month]} ${year}</div><div class="calendar-grid">${dayNames.map(d=>`<div class="cal-day-name">${d}</div>`).join('')}`;
   let dc=1;
   for(let i=0;i<42;i++){
-    if(i<firstDay||dc>daysInMonth){ html+=`<div class="cal-day other-month"></div>`; if(i>=firstDay) dc++; }
+    if(i<firstDay){ html+=`<div class="cal-day other-month"></div>`; }
+    else if(dc>daysInMonth){ html+=`<div class="cal-day other-month"></div>`; }
     else{ const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(dc).padStart(2,'0')}`; html+=`<div class="cal-day ${dc===now.getDate()?'today':''} ${meetingDates.has(ds)?'has-event':''}">${dc}</div>`; dc++; }
   }
   html+='</div>'; document.getElementById('calendarWidget').innerHTML=html;
@@ -1149,7 +1150,7 @@ renderAll();
 setInterval(()=>{ const v=document.getElementById('view-tareas'); if(v&&v.classList.contains('active')) renderTareas(); updateBadges(); updateMobileDots(); }, 60000);
 </script>
 <!-- MOBILE BOTTOM NAV -->
-<nav class="mobile-nav">
+<nav class="mobile-nav" id="mobile-nav">
   <div class="mobile-nav-items">
     <div class="mobile-nav-item active" id="mnav-dashboard" onclick="showView('dashboard',this);setMobileNav('dashboard')">
       <span class="mobile-nav-icon">⚡</span>
